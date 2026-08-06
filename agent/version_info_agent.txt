@@ -1,0 +1,36 @@
+# UTF-8
+#
+# PyInstaller version-info resource file for SwiftAgent.exe
+# This is what makes Windows Services / Task Manager show a real
+# "Manufacturer" instead of "Unknown" for Swift Agent.
+#
+# Used via:  --version-file "agent\version_info_agent.txt"
+#
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 0, 0),
+    prodvers=(1, 0, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo(
+      [
+      StringTable(
+        u'040904B0',
+        [StringStruct(u'CompanyName', u'SwiftProSys Private Ltd'),
+        StringStruct(u'FileDescription', u'Swift Agent'),
+        StringStruct(u'FileVersion', u'1.0.0.0'),
+        StringStruct(u'InternalName', u'SwiftAgent'),
+        StringStruct(u'LegalCopyright', u'\u00A9 SwiftProSys Private Ltd. All rights reserved.'),
+        StringStruct(u'OriginalFilename', u'SwiftAgent.exe'),
+        StringStruct(u'ProductName', u'Swift Agent'),
+        StringStruct(u'ProductVersion', u'1.0.0.0')])
+      ]),
+    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+  ]
+)

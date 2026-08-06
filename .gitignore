@@ -1,0 +1,6 @@
+agent_config.txt 
+.env 
+dist/ 
+build/ 
+__pycache__/ 
+*.pyc

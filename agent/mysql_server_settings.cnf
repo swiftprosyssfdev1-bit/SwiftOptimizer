@@ -1,0 +1,71 @@
+# mysql_server_settings.cnf
+#
+# Sizing target: 500 persistent agent connections (one per managed PC,
+# mostly idle between heartbeats) + a small, bursty number of short-lived
+# UI/Admin connections opening and closing constantly. No pooling on the
+# app side, so the server must comfortably hold ~500+ sockets and recycle
+# short-lived ones fast.
+#
+# Put these under [mysqld] in my.cnf / my.ini, then restart MySQL.
+
+[mysqld]
+
+# --- Connection ceiling ---------------------------------------------------
+# 500 agents + headroom for admin/user dashboards opening/closing many
+# short connections concurrently, plus replication/monitoring/backup
+# tooling. 600 gives ~100 connections of slack above the steady-state 500.
+max_connections = 600
+
+# Each idle connection thread costs real memory. With thread_cache_size
+# below reusing threads for the churny UI/Admin side, per-connection RAM
+# stays cheap even at 600 connections. Budget ~256KB-1MB per idle thread
+# depending on your global buffer settings — size the box accordingly
+# (600 * ~1MB worst case = ~600MB just for connection overhead).
+max_user_connections = 0   # unlimited per-user, rely on max_connections globally
+
+# --- Idle agent connections ------------------------------------------------
+# Agents hold one connection open for hours between heartbeats. Don't let
+# MySQL silently drop them faster than the agent's own reconnect logic
+# expects — but do reclaim truly dead/orphaned sockets (crashed PCs,
+# network drops that never sent a FIN) so they don't count against
+# max_connections forever.
+wait_timeout = 28800          # 8 hours — generous for a heartbeat-interval agent
+interactive_timeout = 28800
+# TCP keepalive so the OS/network layer notices a truly dead agent socket
+# well before wait_timeout would, freeing the slot sooner.
+
+# --- Short-lived UI/Admin connections --------------------------------------
+# These churn constantly (open -> query -> commit -> close per action).
+# thread_cache_size lets MySQL reuse a thread structure for the next
+# incoming connection instead of spawning a new OS thread every time —
+# this is the single biggest win for connect/disconnect-heavy workloads.
+thread_cache_size = 100
+
+# Accept-queue depth for a burst of admins/employees all clicking at once
+# (e.g. right after a shift start, everyone's dashboard reconnects).
+back_log = 150
+
+# --- InnoDB ----------------------------------------------------------------
+# Standard sizing guidance, adjust to actual box RAM (rule of thumb: ~60-70%
+# of RAM on a dedicated DB server). Listed here because connection churn
+# workloads are more sensitive to buffer pool misses than long-lived-
+# connection workloads (every short connection potentially re-reads hot
+# pages if the pool is too small).
+innodb_buffer_pool_size = 2G      # adjust upward on a dedicated DB VM
+innodb_buffer_pool_instances = 4
+innodb_flush_log_at_trx_commit = 1   # keep durability; the audit_logs table matters
+innodb_flush_method = O_DIRECT
+
+# --- Table cache -------------------------------------------------------------
+# 600 concurrent connections each potentially touching multiple tables
+# (users, usb_ports, devices, audit_logs, agent_status...) — keep this
+# comfortably above connections * average tables touched per connection.
+table_open_cache = 4000
+table_definition_cache = 2000
+
+# --- Monitoring --------------------------------------------------------------
+# Watch these two in production once agents are rolling out, they're the
+# earliest warning signs of connection-layer trouble at this scale:
+#   SHOW GLOBAL STATUS LIKE 'Threads_connected';   -- should hover ~500-550
+#   SHOW GLOBAL STATUS LIKE 'Aborted_connects';     -- rising = reconnect storms
+#   SHOW GLOBAL STATUS LIKE 'Connection_errors_max_connections';  -- hit the ceiling
