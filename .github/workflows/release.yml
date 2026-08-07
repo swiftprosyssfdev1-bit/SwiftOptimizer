@@ -28,11 +28,11 @@ jobs:
 
       - name: Build SwiftOptimizer
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name SwiftOptimizer admin_dashboard.py
+          pyinstaller --noconfirm --onedir --windowed --name SwiftOptimizer --add-data "assets;assets" --add-data "core;core" --hidden-import registry_utils --hidden-import db --hidden-import gui_utils --hidden-import styles main.py
 
       - name: Build SwiftAgent
         run: |
-          pyinstaller --noconfirm --onefile --name SwiftAgent agent/usb_agent.py
+          pyinstaller --noconfirm --onefile --name SwiftAgent --hidden-import registry_utils --hidden-import db --hidden-import agent.agent_core agent/usb_agent.py
 
       - name: Install Inno Setup
         run: choco install innosetup -y
