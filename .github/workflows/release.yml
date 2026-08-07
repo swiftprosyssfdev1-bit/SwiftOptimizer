@@ -32,8 +32,8 @@ jobs:
           pyinstaller --noconfirm --onefile --name "SwiftAgent" agent/usb_agent.py
 
       - name: Create ZIP package
-        run: |
-          powershell Compress-Archive -Path "dist/Swift Optimizer.exe","dist/SwiftAgent.exe" -DestinationPath "SwiftProSys-${{ github.ref_name }}.zip"
+        shell: powershell
+        run: Compress-Archive -Path @("dist/Swift Optimizer.exe","dist/SwiftAgent.exe") -DestinationPath "SwiftProSys-${{ github.ref_name }}.zip" -Force
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
