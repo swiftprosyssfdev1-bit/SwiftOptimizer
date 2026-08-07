@@ -1,4 +1,4 @@
-name: Build and Release SwiftProSys
+name: Build and Release Installer
 
 on:
   push:
@@ -21,24 +21,27 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pyqt6 mysql-connector-python pywin32 wmi bcrypt pyinstaller
 
-      - name: Build Swift Optimizer
+      - name: Build SwiftOptimizer
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name "Swift Optimizer" admin_dashboard.py
+          pyinstaller --noconfirm --onefile --windowed --name SwiftOptimizer admin_dashboard.py
 
       - name: Build SwiftAgent
         run: |
-          pyinstaller --noconfirm --onefile --name "SwiftAgent" agent/usb_agent.py
+          pyinstaller --noconfirm --onefile --name SwiftAgent agent/usb_agent.py
 
-      - name: Create ZIP package
-        shell: powershell
-        run: Compress-Archive -Path @("dist/Swift Optimizer.exe","dist/SwiftAgent.exe") -DestinationPath "SwiftProSys-${{ github.ref_name }}.zip" -Force
+      - name: Install Inno Setup
+        run: choco install innosetup -y
 
-      - name: Create Release
+      - name: Build Installer
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup_usb_control.iss
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: SwiftProSys-${{ github.ref_name }}.zip 
+          files: Output/SwiftProsys_Swift_Optimizer_Setup.exe
