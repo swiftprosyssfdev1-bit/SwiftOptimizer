@@ -1,0 +1,40 @@
+name: Build SwiftProSys EXEs
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyqt6 mysql-connector-python pywin32 wmi bcrypt pyinstaller
+
+      - name: Build Swift Optimizer
+        run: |
+          pyinstaller --noconfirm --onefile --windowed --name "Swift Optimizer" admin_dashboard.py
+
+      - name: Build SwiftAgent
+        run: |
+          pyinstaller --noconfirm --onefile --name "SwiftAgent" agent/usb_agent.py
+
+      - name: Upload EXEs
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwiftProSys-EXEs
+          path: |
+            dist/Swift Optimizer.exe
+            dist/SwiftAgent.exe
