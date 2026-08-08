@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyqt6 mysql-connector-python pywin32 wmi bcrypt pyinstaller python-dotenv
 
-      - name: Write .env from secrets
+      - name: Write .env and agent_config.txt from secrets
         shell: powershell
         run: |
           @"
@@ -35,6 +35,18 @@ jobs:
           USB_DB_PASSWORD=$env:USB_DB_PASSWORD
           USB_DB_NAME=$env:USB_DB_NAME
           "@ | Set-Content -Path ".env" -Encoding utf8
+
+          @"
+          ; USB Control Agent — Configuration File (generated for CI build)
+          [mysql]
+          host     = $env:USB_DB_HOST
+          user     = $env:USB_DB_USER
+          password = $env:USB_DB_PASSWORD
+          database = $env:USB_DB_NAME
+
+          [agent]
+          username =
+          "@ | Set-Content -Path "agent\agent_config.txt" -Encoding utf8
         env:
           USB_DB_HOST: ${{ secrets.USB_DB_HOST }}
           USB_DB_USER: ${{ secrets.USB_DB_USER }}
