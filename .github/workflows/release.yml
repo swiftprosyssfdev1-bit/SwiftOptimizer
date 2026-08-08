@@ -24,15 +24,30 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyqt6 mysql-connector-python pywin32 wmi bcrypt pyinstaller
+          pip install pyqt6 mysql-connector-python pywin32 wmi bcrypt pyinstaller python-dotenv
+
+      - name: Write .env from secrets
+        shell: powershell
+        run: |
+          @"
+          USB_DB_HOST=$env:USB_DB_HOST
+          USB_DB_USER=$env:USB_DB_USER
+          USB_DB_PASSWORD=$env:USB_DB_PASSWORD
+          USB_DB_NAME=$env:USB_DB_NAME
+          "@ | Set-Content -Path ".env" -Encoding utf8
+        env:
+          USB_DB_HOST: ${{ secrets.USB_DB_HOST }}
+          USB_DB_USER: ${{ secrets.USB_DB_USER }}
+          USB_DB_PASSWORD: ${{ secrets.USB_DB_PASSWORD }}
+          USB_DB_NAME: ${{ secrets.USB_DB_NAME }}
 
       - name: Build SwiftOptimizer
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name SwiftOptimizer --add-data "assets;assets" --add-data "core;core" --hidden-import registry_utils --hidden-import db --hidden-import gui_utils --hidden-import styles main.py
+          pyinstaller --noconfirm --onefile --windowed --name SwiftOptimizer --icon "assets\icon.ico" --version-file "version_info_optimizer.txt" --add-data "assets;assets" --add-data "core;core" --add-data ".env;." --hidden-import registry_utils --hidden-import db --hidden-import gui_utils --hidden-import styles --hidden-import dotenv main.py
 
       - name: Build SwiftAgent
         run: |
-          pyinstaller --noconfirm --onefile --name SwiftAgent --hidden-import registry_utils --hidden-import db --hidden-import agent.agent_core agent/usb_agent.py
+          pyinstaller --noconfirm --onefile --name SwiftAgent --icon "assets\icon.ico" --version-file "agent\version_info_agent.txt" --add-data "agent\agent_config.txt;." --hidden-import registry_utils --hidden-import db --hidden-import agent.agent_core --hidden-import win32serviceutil --hidden-import win32service --hidden-import win32event --hidden-import servicemanager --hidden-import winerror --hidden-import pythoncom --hidden-import pywintypes --hidden-import wmi --hidden-import win32com --hidden-import win32com.client --hidden-import win32api --hidden-import win32timezone --paths "." agent\swift_agent_service.py
 
       - name: Install Inno Setup
         run: choco install innosetup -y

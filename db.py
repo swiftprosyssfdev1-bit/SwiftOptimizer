@@ -6,6 +6,53 @@ import mysql.connector
 import hashlib
 import os
 import re
+import sys
+
+# ── .env loading diagnostics ──────────────────────────────────────────────
+# Filled in below regardless of outcome, so main.py's error dialog can show
+# exactly what was tried instead of a bare, unhelpful MySQL error.
+ENV_DEBUG = {
+    "dotenv_installed": False,
+    "checked_paths": [],
+    "loaded_path": None,
+}
+
+try:
+    from dotenv import load_dotenv
+    ENV_DEBUG["dotenv_installed"] = True
+
+    # In a frozen build, .env is bundled INTO the exe (via --add-data
+    # ".env;." in build_exe.bat, same pattern as agent_config.txt for
+    # SwiftAgent.exe) so it never appears as a visible/editable file next
+    # to the exe -- PyInstaller unpacks bundled data to a temp folder at
+    # runtime, reported as sys._MEIPASS. When NOT frozen (running
+    # main.py directly), fall back to a plain .env next to this script or
+    # in the current working directory, for local dev convenience.
+    _candidate_dirs = []
+    if getattr(sys, "frozen", False):
+        _candidate_dirs.append(getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(sys.executable))))
+    else:
+        _candidate_dirs.append(os.path.dirname(os.path.abspath(__file__)))
+        _candidate_dirs.append(os.getcwd())
+
+    for _d in _candidate_dirs:
+        _p = os.path.join(_d, ".env")
+        ENV_DEBUG["checked_paths"].append(_p)
+        if os.path.isfile(_p):
+            load_dotenv(_p)
+            ENV_DEBUG["loaded_path"] = _p
+            break
+    else:
+        # Nothing found on disk -- still call load_dotenv() with no args
+        # as a last resort (it searches upward from cwd on its own).
+        load_dotenv()
+
+except ImportError:
+    # python-dotenv not installed -- fall back to whatever's already in
+    # the environment (e.g. set manually via PowerShell/System settings).
+    # In a frozen exe this usually means the build forgot to bundle
+    # dotenv (see --hidden-import "dotenv" in build_exe.bat).
+    pass
 
 try:
     import bcrypt

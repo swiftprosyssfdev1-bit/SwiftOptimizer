@@ -1,5 +1,5 @@
 #define AppName "Swift Optimizer"
-#define AppVersion "1.0"
+#define AppVersion "1.6"
 #define TaskName "SwiftAgent"
 
 [Setup]
@@ -22,14 +22,16 @@ DisableWelcomePage=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "dist\SwiftOptimizer\*"; DestDir: "{app}\SwiftOptimizer"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\SwiftOptimizer.exe";        DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\SwiftAgent.exe";     DestDir: "{app}"; Flags: ignoreversion
-; agent_config.txt is NOT installed as a separate file — it's embedded
-; inside SwiftAgent.exe by PyInstaller (see build_exe.bat) and read
-; straight from there at runtime, so no config file ever lands in {app}.
+; Neither agent_config.txt nor .env is installed as a separate visible
+; file — both are embedded straight into their respective .exe by
+; PyInstaller (see --add-data in build_exe.bat) and read from the
+; extracted temp folder at runtime, so no plaintext credentials file
+; ever lands in {app} for a user to open.
 
 [Icons]
-Name: "{commondesktop}\Swift Optimizer"; Filename: "{app}\SwiftOptimizer\SwiftOptimizer.exe"; Comment: "Swift Optimizer"
+Name: "{commondesktop}\Swift Optimizer"; Filename: "{app}\SwiftOptimizer.exe"; Comment: "Swift Optimizer"
 
 [Run]
 ; Register SwiftProSysUSBAgent as a real Windows Service, start it, and

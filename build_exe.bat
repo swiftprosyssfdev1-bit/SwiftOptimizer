@@ -44,6 +44,7 @@ python -m PyInstaller ^
     --version-file "version_info_optimizer.txt" ^
     --add-data "assets\logo.png;assets" ^
     --add-data "assets\icon.ico;assets" ^
+    --add-data ".env;." ^
     --hidden-import "mysql.connector" ^
     --hidden-import "mysql.connector.plugins" ^
     --hidden-import "mysql.connector.plugins.mysql_native_password" ^
@@ -51,6 +52,7 @@ python -m PyInstaller ^
     --hidden-import "mysql.connector.locales.eng" ^
     --hidden-import "mysql.connector.locales.eng.client_error" ^
     --collect-submodules "mysql.connector" ^
+    --hidden-import "dotenv" ^
     --hidden-import "PyQt6.QtCore" ^
     --hidden-import "PyQt6.QtGui" ^
     --hidden-import "PyQt6.QtWidgets" ^

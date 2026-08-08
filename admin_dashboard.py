@@ -640,6 +640,29 @@ class AdminDashboard(QMainWindow):
     def _reset_bg_flag(self):
         self._bg_running = False
 
+    def closeEvent(self, event):
+        """Stop the refresh timer and safely wind down any in-flight
+        background thread before this window is destroyed. Without this,
+        closing the admin window while a QThread is still running causes
+        Qt to abort with 'QThread: Destroyed while thread is still
+        running' — same failure mode UserDashboard.closeEvent() already
+        guards against."""
+        try:
+            self._timer.stop()
+        except Exception:
+            pass
+
+        thread = getattr(self, '_bg_thread', None)
+        if thread is not None:
+            try:
+                if thread.isRunning():
+                    thread.quit()
+                    thread.wait(3000)  # give the worker up to 3s to finish
+            except RuntimeError:
+                pass  # underlying C++ object already gone
+
+        super().closeEvent(event)
+
     def _on_refresh_data(self, ports, reqs, slots, user_ports, logs, systems, unregistered=None):
         """Called on the UI thread with fresh data fetched in the background.
         Renders directly from these args — must NOT call db.* here, that

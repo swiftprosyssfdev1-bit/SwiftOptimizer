@@ -5,10 +5,13 @@ import sys
 import os
 import ctypes
 import builtins
+
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt
 
+# db.py loads .env itself (frozen-exe aware -- see db.py), so importing it
+# here is enough to have USB_DB_* available for the rest of this module.
 import db   
 from styles import APP_STYLESHEET, resource_path
 from login import LoginWindow
@@ -64,10 +67,24 @@ def main():
         db.init_db()    
     except BaseException as e:
         import gui_utils
+        diag = db.ENV_DEBUG
+        cfg = db.MYSQL_CONFIG
+        diag_lines = [
+            f"python-dotenv installed: {diag.get('dotenv_installed')}",
+            f".env loaded from: {diag.get('loaded_path') or 'NOT FOUND (checked: ' + '; '.join(diag.get('checked_paths', [])) + ')'}",
+            f"Resolved config -> host={cfg.get('host')!r}, user={cfg.get('user')!r}, database={cfg.get('database')!r}",
+        ]
         gui_utils.show_error(
             None,
             "Database Connection Error",
-            f"Failed to connect to the MySQL database.\n\nError: {e}\n\nPlease check your MySQL configuration in db.py and ensure the MySQL service is running."
+            "Failed to connect to the MySQL database.\n\n"
+            f"Error: {e}\n\n"
+            + "\n".join(diag_lines) +
+            "\n\nIf host/user/database above are blank or 'None', .env "
+            "wasn't found -- for a dev run, make sure .env sits next to "
+            "main.py; for the installed app, it should be bundled into "
+            "SwiftOptimizer.exe at build time (--add-data \".env;.\" in "
+            "build_exe.bat) -- rebuild the exe with a valid .env present."
         )
         sys.exit(1)
 
