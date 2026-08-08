@@ -29,24 +29,32 @@ jobs:
       - name: Write .env and agent_config.txt from secrets
         shell: powershell
         run: |
-          @"
-          USB_DB_HOST=$env:USB_DB_HOST
-          USB_DB_USER=$env:USB_DB_USER
-          USB_DB_PASSWORD=$env:USB_DB_PASSWORD
-          USB_DB_NAME=$env:USB_DB_NAME
-          "@ | Set-Content -Path ".env" -Encoding utf8
+          $missing = @()
+          if ([string]::IsNullOrEmpty($env:USB_DB_HOST)) { $missing += "USB_DB_HOST" }
+          if ([string]::IsNullOrEmpty($env:USB_DB_USER)) { $missing += "USB_DB_USER" }
+          if ([string]::IsNullOrEmpty($env:USB_DB_PASSWORD)) { $missing += "USB_DB_PASSWORD" }
+          if ([string]::IsNullOrEmpty($env:USB_DB_NAME)) { $missing += "USB_DB_NAME" }
+          if ($missing.Count -gt 0) {
+            Write-Host "##[error] Missing/empty repo secrets: $($missing -join ', ') -- add them under Settings > Secrets and variables > Actions"
+            exit 1
+          }
 
-          @"
-          ; USB Control Agent — Configuration File (generated for CI build)
-          [mysql]
-          host     = $env:USB_DB_HOST
-          user     = $env:USB_DB_USER
-          password = $env:USB_DB_PASSWORD
-          database = $env:USB_DB_NAME
+          "USB_DB_HOST=$env:USB_DB_HOST" | Set-Content -Path ".env" -Encoding utf8
+          "USB_DB_USER=$env:USB_DB_USER" | Add-Content -Path ".env" -Encoding utf8
+          "USB_DB_PASSWORD=$env:USB_DB_PASSWORD" | Add-Content -Path ".env" -Encoding utf8
+          "USB_DB_NAME=$env:USB_DB_NAME" | Add-Content -Path ".env" -Encoding utf8
 
-          [agent]
-          username =
-          "@ | Set-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "; USB Control Agent - Configuration File (generated for CI build)" | Set-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "[mysql]" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "host     = $env:USB_DB_HOST" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "user     = $env:USB_DB_USER" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "password = $env:USB_DB_PASSWORD" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "database = $env:USB_DB_NAME" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "[agent]" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+          "username =" | Add-Content -Path "agent\agent_config.txt" -Encoding utf8
+
+          Write-Host "Wrote .env with keys:" (Get-Content ".env" | ForEach-Object { ($_ -split '=')[0] })
         env:
           USB_DB_HOST: ${{ secrets.USB_DB_HOST }}
           USB_DB_USER: ${{ secrets.USB_DB_USER }}
